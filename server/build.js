@@ -1,6 +1,5 @@
 import { build } from "esbuild";
 
-// Replace './src/server.js' with the entry point to your application
 build({
   entryPoints: ["./server.mjs"],
   bundle: true,

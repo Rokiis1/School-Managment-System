@@ -1,35 +1,18 @@
 import express from "express";
+import fs from "fs";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const studentsFilePath = path.join(__dirname, "data/students.json");
+let students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
 
 const app = express();
 const PORT = 3000;
 const BASE_PATH = "/api/v1";
 
 app.use(express.json());
-
-let students = [
-  {
-    id: 1,
-    name: "Example Student",
-    age: 20,
-    grade: 6,
-    email: "exampleStudent@example.com",
-    address: "Example Address",
-    phone: "+370111111111",
-    enrollmentDate: "2022-01-15",
-    courses: ["Math", "Science"],
-  },
-  {
-    id: 2,
-    name: "Example Student 2",
-    age: 22,
-    grade: 10,
-    email: "exampleStudent2@example.com",
-    address: "Example Address",
-    phone: "+3702222222",
-    enrollmentDate: "2021-09-01",
-    courses: ["History", "Art"],
-  },
-];
 
 /**
  * Health check endpoint.
@@ -113,7 +96,7 @@ app.get(`${BASE_PATH}/students/:id`, (req, res) => {
  * @param {Object} res - Response object
  * @returns {Object} 201 - Student added successfully
  */
-app.post(`${BASE_PATH}/students`, (req, res) => {
+app.post(`${BASE_PATH}/students`, async (req, res) => {
   try {
     const newStudent = {
       id: students.length + 1,
@@ -128,6 +111,11 @@ app.post(`${BASE_PATH}/students`, (req, res) => {
     };
 
     students.push(newStudent);
+
+    await fs.promises.writeFile(
+      studentsFilePath,
+      JSON.stringify(students, null, 2),
+    );
 
     res.status(201).json({
       status: "success",
@@ -151,7 +139,7 @@ app.post(`${BASE_PATH}/students`, (req, res) => {
  * @returns {Object} 404 - Student not found
  * @returns {Object} 400 - All fields are required
  */
-app.put(`${BASE_PATH}/students/:id`, (req, res) => {
+app.put(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {
     const updateStudent = students.find(
       (student) => student.id === parseInt(req.params.id),
@@ -203,6 +191,11 @@ app.put(`${BASE_PATH}/students/:id`, (req, res) => {
       courses,
     });
 
+    await fs.promises.writeFile(
+      studentsFilePath,
+      JSON.stringify(students, null, 2),
+    );
+
     res.status(200).json({
       status: "success",
       message: "Student updated successfully",
@@ -224,7 +217,7 @@ app.put(`${BASE_PATH}/students/:id`, (req, res) => {
  * @returns {Object} 200 - Student updated successfully
  * @returns {Object} 404 - Student not found
  */
-app.patch(`${BASE_PATH}/students/:id`, (req, res) => {
+app.patch(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {
     const updateSpecificValueStudent = students.find(
       (student) => student.id === parseInt(req.params.id),
@@ -277,6 +270,11 @@ app.patch(`${BASE_PATH}/students/:id`, (req, res) => {
       }
     }
 
+    await fs.promises.writeFile(
+      studentsFilePath,
+      JSON.stringify(students, null, 2),
+    );
+
     res.status(200).json({
       status: "success",
       message: "Student updated successfully",
@@ -298,7 +296,7 @@ app.patch(`${BASE_PATH}/students/:id`, (req, res) => {
  * @returns {Object} 200 - Student deleted successfully
  * @returns {Object} 404 - Student not found
  */
-app.delete(`${BASE_PATH}/students/:id`, (req, res) => {
+app.delete(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {
     const deleteStudent = students.findIndex(
       (student) => student.id === parseInt(req.params.id),
@@ -312,6 +310,11 @@ app.delete(`${BASE_PATH}/students/:id`, (req, res) => {
     }
 
     students.splice(deleteStudent, 1);
+
+    await fs.promises.writeFile(
+      studentsFilePath,
+      JSON.stringify(students, null, 2),
+    );
 
     res.status(200).json({
       status: "success",

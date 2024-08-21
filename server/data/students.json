@@ -1,0 +1,30 @@
+[
+  {
+    "id": 2,
+    "name": "Example Student 2",
+    "age": 22,
+    "grade": 10,
+    "email": "exampleStudent2@example.com",
+    "address": "Example Address",
+    "phone": "+3702222222",
+    "enrollmentDate": "2021-09-01",
+    "courses": [
+      "History",
+      "Art"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Example Student 3",
+    "age": 20,
+    "grade": 4,
+    "email": "exampleStudent3@example.com",
+    "address": "Example Address",
+    "phone": "+370111111111",
+    "enrollmentDate": "2022-01-15",
+    "courses": [
+      "English",
+      "IT"
+    ]
+  }
+]

@@ -9,8 +9,7 @@
     "lint:fix": "eslint . --fix",
     "build": "esbuild server.mjs",
     "nodemon": "nodemon server.mjs",
-    "start:dev": "node --watch server.mjs",
-    "start:prev": "node dist/server.js"
+    "start:dev": "node --watch server.mjs"
   },
   "keywords": [],
   "author": "",

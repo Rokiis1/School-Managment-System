@@ -34,7 +34,6 @@ export default [
 
     languageOptions: {
       globals: {
-        // Define console as a global variable
         console: "readonly",
         process: "readonly",
       },

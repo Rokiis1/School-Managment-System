@@ -18,11 +18,10 @@ app.use(express.json());
  * Health check endpoint.
  * @route GET /api/v1/health
  * @returns {Object} 200 - Server health status
+ * @returns {Object} 500 - Internal Server Error
  */
 app.get(`${BASE_PATH}/health`, (req, res) => {
   try {
-    // res.json();
-    // res.status(200).json();
     res.status(200).json({
       status: "success",
       message: "Server is healthy",
@@ -39,6 +38,7 @@ app.get(`${BASE_PATH}/health`, (req, res) => {
  * Get all students.
  * @route GET /api/v1/students
  * @returns {Object} 200 - List of students
+ * @returns {Object} 500 - Internal Server Error
  */
 app.get(`${BASE_PATH}/students`, (req, res) => {
   try {
@@ -56,12 +56,170 @@ app.get(`${BASE_PATH}/students`, (req, res) => {
 });
 
 /**
- * Get a student by ID.
+ * Search students by name.
+ * @route GET /api/v1/students/search
+ * @param {string} req.query.name - Name to search for
+ * @returns {Object} 200 - List of students matching the search criteria
+ * @returns {Object} 400 - Name query parameter is required
+ * @returns {Object} 500 - Internal Server Error
+ */
+app.get(`${BASE_PATH}/students/search`, (req, res) => {
+  try {
+    const { name } = req.query;
+
+    if (!name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Name query parameter is required",
+      });
+    }
+
+    const filteredStudents = students.filter((student) =>
+      student.name.toLowerCase().includes(name.toLowerCase()),
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "Students retrieved successfully",
+      data: filteredStudents,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: `Internal Server Error, ${error}`,
+    });
+  }
+});
+
+/**
+ * Get paginated list of students.
+ * @route GET /api/v1/students/paginated
+ * @param {number} [req.query.page=1] - Page number
+ * @param {number} [req.query.limit=10] - Number of students per page
+ * @returns {Object} 200 - Paginated list of students
+ * @returns {Object} 500 - Internal Server Error
+ */
+app.get(`${BASE_PATH}/students/paginated`, (req, res) => {
+  try {
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedStudents = students.slice(startIndex, endIndex);
+
+    const totalPages = Math.ceil(students.length / limit);
+
+    const baseUrl = `${req.protocol}://${req.get("host")}${req.baseUrl}${req.path}`;
+    const links = [];
+
+    if (page > 1) {
+      links.push(`<${baseUrl}?page=1&limit=${limit}>; rel="first"`);
+      links.push(`<${baseUrl}?page=${page - 1}&limit=${limit}>; rel="prev"`);
+    }
+    if (page < totalPages) {
+      links.push(`<${baseUrl}?page=${page + 1}&limit=${limit}>; rel="next"`);
+      links.push(`<${baseUrl}?page=${totalPages}&limit=${limit}>; rel="last"`);
+    }
+
+    res.set("Link", links.join(", "));
+
+    res.status(200).json({
+      status: "success",
+      message: "Students retrieved successfully",
+      data: paginatedStudents,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(students.length / limit),
+        totalStudents: students.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: `Internal Server Error, ${error}`,
+    });
+  }
+});
+
+/**
+ * @route GET /students/sorted-by-grade
+ * @description Get students sorted by grade from 1 to 10
+ * @param {string} [req.query.sortOrder=asc] - Sort order, either 'asc' or 'desc'
+ * @returns {Object} 200 - An array of students sorted by grade
+ * @returns {Object} 500 - Internal Server Error
+ */
+app.get(`${BASE_PATH}/students/sorted-by-grade`, (req, res) => {
+  try {
+    const { sortOrder = "asc" } = req.query;
+
+    if (!["asc", "desc"].includes(sortOrder)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid sortOrder query parameter. Must be 'asc' or 'desc'.",
+      });
+    }
+
+    const sortedStudents = students.sort((a, b) => {
+      return sortOrder === "asc" ? a.grade - b.grade : b.grade - a.grade;
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Students sorted by grade successfully",
+      data: sortedStudents,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: `Internal Server Error, ${error}`,
+    });
+  }
+});
+
+/**
+ * @route GET /students/filter-by-course
+ * @description Get students filtered by course
+ * @param {string} req.query.course - Course name to filter by
+ * @returns {Object} 200 - An array of students filtered by course
+ * @returns {Object} 400 - Course query parameter is required
+ * @returns {Object} 500 - Internal Server Error
+ */
+app.get(`${BASE_PATH}/students/filter-by-course`, (req, res) => {
+  try {
+    const { course } = req.query;
+
+    if (!course) {
+      return res.status(400).json({
+        status: "error",
+        message: "Course query parameter is required",
+      });
+    }
+
+    const filteredStudents = students.filter((student) =>
+      student.courses.includes(course),
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "Students filtered by course successfully",
+      data: filteredStudents,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: `Internal Server Error, ${error}`,
+    });
+  }
+});
+
+/**
+ * Retrieve a student by ID.
  * @route GET /api/v1/students/:id
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @returns {Object} 200 - Student data
+ * @returns {Object} 200 - Student retrieved successfully
  * @returns {Object} 404 - Student not found
+ * @returns {Object} 500 - Internal Server Error
  */
 app.get(`${BASE_PATH}/students/:id`, (req, res) => {
   try {
@@ -92,9 +250,9 @@ app.get(`${BASE_PATH}/students/:id`, (req, res) => {
 /**
  * Add a new student.
  * @route POST /api/v1/students
- * @param {Object} req - Request object
- * @param {Object} res - Response object
+ * @param {Object} req.body - Body of the request
  * @returns {Object} 201 - Student added successfully
+ * @returns {Object} 500 - Internal Server Error
  */
 app.post(`${BASE_PATH}/students`, async (req, res) => {
   try {
@@ -133,11 +291,11 @@ app.post(`${BASE_PATH}/students`, async (req, res) => {
 /**
  * Update a student by ID.
  * @route PUT /api/v1/students/:id
- * @param {Object} req - Request object
- * @param {Object} res - Response object
+ * @param {Object} req.body - Body of the request
  * @returns {Object} 200 - Student updated successfully
- * @returns {Object} 404 - Student not found
  * @returns {Object} 400 - All fields are required
+ * @returns {Object} 404 - Student not found
+ * @returns {Object} 500 - Internal Server Error
  */
 app.put(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {
@@ -171,15 +329,6 @@ app.put(`${BASE_PATH}/students/:id`, async (req, res) => {
       });
     }
 
-    // updateStudent.name = req.body.name;
-    // updateStudent.age = req.body.age;
-    // updateStudent.grade = req.body.grade;
-    // updateStudent.email = req.body.email;
-    // updateStudent.address = req.body.address;
-    // updateStudent.phone = req.body.phone;
-    // updateStudent.enrollmentDate = req.body.enrollmentDate;
-    // updateStudent.courses = req.body.courses;
-
     Object.assign(updateStudent, {
       name,
       age,
@@ -212,10 +361,10 @@ app.put(`${BASE_PATH}/students/:id`, async (req, res) => {
 /**
  * Partially update a student by ID.
  * @route PATCH /api/v1/students/:id
- * @param {Object} req - Request object
- * @param {Object} res - Response object
+ * @param {Object} req.body - Body of the request
  * @returns {Object} 200 - Student updated successfully
  * @returns {Object} 404 - Student not found
+ * @returns {Object} 500 - Internal Server Error
  */
 app.patch(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {
@@ -230,36 +379,7 @@ app.patch(`${BASE_PATH}/students/:id`, async (req, res) => {
       });
     }
 
-    // if (req.body.name !== undefined) updateSpecificValueStudent.name = req.body.name;
-    // if (req.body.age !== undefined) updateSpecificValueStudent.age = req.body.age;
-    // if (req.body.grade !== undefined) updateSpecificValueStudent.grade = req.body.grade;
-    // if (req.body.email !== undefined) updateSpecificValueStudent.email = req.body.email;
-    // if (req.body.address !== undefined) updateSpecificValueStudent.address = req.body.address;
-    // if (req.body.phone !== undefined) updateSpecificValueStudent.phone = req.body.phone;
-    // if (req.body.enrollmentDate !== undefined) updateSpecificValueStudent.enrollmentDate = req.body.enrollmentDate;
-    // if (req.body.courses !== undefined) updateSpecificValueStudent.courses = req.body.courses;
-
-    // const { name, age, grade, email, address, phone, enrollmentDate, courses } = req.body;
-
-    // if (name !== undefined) updateSpecificValueStudent.name = name;
-    // if (age !== undefined) updateSpecificValueStudent.age = age;
-    // if (grade !== undefined) updateSpecificValueStudent.grade = grade;
-    // if (email !== undefined) updateSpecificValueStudent.email = email;
-    // if (address !== undefined) updateSpecificValueStudent.address = address;
-    // if (phone !== undefined) updateSpecificValueStudent.phone = phone;
-    // if (enrollmentDate !== undefined) updateSpecificValueStudent.enrollmentDate = enrollmentDate;
-    // if (courses !== undefined) updateSpecificValueStudent.courses = courses;
-
     const updates = req.body;
-
-    // for (const key in updates) {
-    //   if (
-    //     updates.hasOwnProperty(key) &&
-    //     updateSpecificValueStudent.hasOwnProperty(key)
-    //   ) {
-    //     updateSpecificValueStudent[key] = updates[key];
-    //   }
-    // }
 
     for (const key in updates) {
       if (
@@ -291,10 +411,9 @@ app.patch(`${BASE_PATH}/students/:id`, async (req, res) => {
 /**
  * Delete a student by ID.
  * @route DELETE /api/v1/students/:id
- * @param {Object} req - Request object
- * @param {Object} res - Response object
  * @returns {Object} 200 - Student deleted successfully
  * @returns {Object} 404 - Student not found
+ * @returns {Object} 500 - Internal Server Error
  */
 app.delete(`${BASE_PATH}/students/:id`, async (req, res) => {
   try {

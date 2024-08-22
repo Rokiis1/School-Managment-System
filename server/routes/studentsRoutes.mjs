@@ -1,6 +1,6 @@
 import express from "express";
 
-import studentsController from "../controllers/studentsControllers.mjs";
+import { studentsController } from "../controllers/index.mjs";
 // import studentsClassController from "../controllers/studentsClassBasedControllers.mjs";
 // import { getStudents } from "../controllers/studentsFunctionBasedController.mjs";
 

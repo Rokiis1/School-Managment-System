@@ -1,16 +1,16 @@
 [
   {
     "id": 2,
-    "name": "Petras",
-    "age": 22,
-    "grade": 10,
-    "email": "exampleStudent2@example.com",
+    "name": "Example Student 6",
+    "age": 80,
+    "grade": 6,
+    "email": "exampleddefwStudent5@example.com",
     "address": "Example Address",
-    "phone": "+3702222222",
-    "enrollmentDate": "2021-09-01",
+    "phone": "+370111111111",
+    "enrollmentDate": "2022-01-15",
     "courses": [
-      "History",
-      "Art"
+      "Math",
+      "Science"
     ]
   },
   {
@@ -39,6 +39,20 @@
     "courses": [
       "History",
       "IT"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Example Student 15",
+    "age": 20,
+    "grade": 4,
+    "email": "exampleStudent15@example.com",
+    "address": "Example Address",
+    "phone": "+370111111111",
+    "enrollmentDate": "2022-01-15",
+    "courses": [
+      "Cooking",
+      "Sport"
     ]
   }
 ]

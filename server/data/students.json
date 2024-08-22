@@ -26,5 +26,19 @@
       "English",
       "IT"
     ]
+  },
+  {
+    "id": 3,
+    "name": "Example Student 10",
+    "age": 20,
+    "grade": 4,
+    "email": "exampleStudent10@example.com",
+    "address": "Example Address",
+    "phone": "+370111111111",
+    "enrollmentDate": "2022-01-15",
+    "courses": [
+      "History",
+      "IT"
+    ]
   }
 ]

@@ -38,13 +38,6 @@ const studentsController = {
       const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
       const { name } = req.query;
 
-      if (!name) {
-        return res.status(400).json({
-          status: "error",
-          message: "Name query parameter is required",
-        });
-      }
-
       const filteredStudents = students.filter((student) =>
         student.name.toLowerCase().includes(name.toLowerCase()),
       );
@@ -120,14 +113,6 @@ const studentsController = {
       const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
       const { sortOrder = "asc" } = req.query;
 
-      if (!["asc", "desc"].includes(sortOrder)) {
-        return res.status(400).json({
-          status: "error",
-          message:
-            "Invalid sortOrder query parameter. Must be 'asc' or 'desc'.",
-        });
-      }
-
       const sortedStudents = students.sort((a, b) => {
         return sortOrder === "asc" ? a.grade - b.grade : b.grade - a.grade;
       });
@@ -152,13 +137,6 @@ const studentsController = {
     try {
       const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
       const { course } = req.query;
-
-      if (!course) {
-        return res.status(400).json({
-          status: "error",
-          message: "Course query parameter is required",
-        });
-      }
 
       const filteredStudents = students.filter((student) =>
         student.courses.includes(course),

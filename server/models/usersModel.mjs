@@ -22,6 +22,30 @@ const usersModel = {
     }
   },
 
+  getUserByEmail: async (email) => {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT 
+          user_id, 
+          first_name, 
+          last_name, 
+          email, 
+          role, 
+          created_at
+        FROM 
+          users
+        WHERE 
+          email = $1;
+      `;
+      const values = [email];
+      const result = await client.query(query, values);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
+  },
+
   getUserById: async (userId) => {
     const client = await pool.connect();
     try {

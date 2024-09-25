@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { usersModel } from "../models/index.mjs";
 
 const usersController = {
@@ -37,14 +38,24 @@ const usersController = {
   },
 
   registerUser: async (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, repeatPassword } = req.body;
 
     try {
+      if (password !== repeatPassword) {
+        return res.status(400).json({
+          status: "error",
+          message: "Passwords do not match",
+        });
+      }
+
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
       const registeredUser = await usersModel.registerUser({
         firstName,
         lastName,
         email,
-        password,
+        password: hashedPassword,
       });
 
       res.status(201).json({
@@ -53,9 +64,37 @@ const usersController = {
         data: registeredUser,
       });
     } catch (error) {
+      console.error("Error registering user:", error.stack);
       res.status(500).json({
         status: "error",
         message: "Error registering user",
+        error: error.message,
+      });
+    }
+  },
+
+  login: async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+      const user = await usersModel.login({ email, password });
+
+      if (!user) {
+        return res.status(401).json({
+          status: "error",
+          message: "Invalid email or password",
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "User logged in successfully",
+        data: user,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        message: "Error logging in user",
         error: error.message,
       });
     }

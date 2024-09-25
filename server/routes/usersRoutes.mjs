@@ -1,15 +1,22 @@
 import express from "express";
-
+import jwt from "jsonwebtoken";
 import { usersController, studentsController } from "../controllers/index.mjs";
 import {
   userValidationSchema,
   studentValidationSchema,
 } from "../validation/index.mjs";
 import { validate } from "../middleware/schemaValidator.mjs";
+import passport from "../strategies/auth.mjs";
+import { isAdmin, isStudent } from "../middleware/roleCheck.mjs";
 
 const router = express.Router();
 
-router.get("/", usersController.getUsers);
+router.get(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  isAdmin,
+  usersController.getUsers,
+);
 
 router.get(
   "/search",
@@ -17,7 +24,27 @@ router.get(
   usersController.getUserByName,
 );
 
-router.post("/register", usersController.registerUser);
+router.post(
+  "/register",
+  validate(userValidationSchema.userValidationSchema),
+  usersController.registerUser,
+);
+
+router.post(
+  "/login",
+  validate(userValidationSchema.login),
+  passport.authenticate("local", { session: false }),
+  isStudent,
+  (req, res) => {
+    const token = jwt.sign(
+      { user_id: req.user.user_id, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" },
+    );
+    res.status(200).json({ message: "Logged in successfully.", token });
+  },
+  usersController.login,
+);
 
 router.delete(
   "/:userId",
@@ -33,19 +60,19 @@ router.post(
 
 router.get(
   "/:userId/students/:studentId",
-  // validate(studentValidationSchema.getStudentById),
+  validate(studentValidationSchema.getStudentById),
   studentsController.getStudentById,
 );
 
 router.put(
   "/:userId/students/:studentId",
-  // validate(studentValidationSchema.updateStudent),
+  validate(studentValidationSchema.updateStudent),
   studentsController.updateStudent,
 );
 
 router.patch(
   "/:userId/students/:studentId",
-  // validate(studentValidationSchema.partiallyUpdateStudent),
+  validate(studentValidationSchema.partiallyUpdateStudent),
   studentsController.partiallyUpdateStudent,
 );
 

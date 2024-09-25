@@ -30,16 +30,3 @@ export const connectDB = async () => {
     throw err;
   }
 };
-
-// export const connectDB = () => {
-//   return new Promise((resolve, reject) => {
-//     pool.connect((err) => {
-//       if (err) {
-//         console.error("connection error", err.stack);
-//         reject(err);
-//       } else {
-//         resolve("Database connected successfully");
-//       }
-//     });
-//   });
-// };

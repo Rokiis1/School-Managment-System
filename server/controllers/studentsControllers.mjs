@@ -1,22 +1,9 @@
-import fs from "fs";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
+import { usersModel, studentsModel } from "../models/index.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const studentsFilePath = path.join(__dirname, "../models/students.json");
-
-/**
- * Controller for handling student-related operations.
- * @namespace studentsController
- */
 const studentsController = {
-  /**
-   * Retrieves all students from the JSON file and sends them in the response.
-   */
-  getStudents: (req, res) => {
+  getStudents: async (req, res) => {
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
+      const students = await studentsModel.getStudents();
       res.status(200).json({
         status: "success",
         message: "Students retrieved successfully",
@@ -30,46 +17,18 @@ const studentsController = {
     }
   },
 
-  /**
-   * Retrieves students by name from the JSON file and sends them in the response.
-   */
-  getStudentsByName: (req, res) => {
+  getPaginatedStudents: async (req, res) => {
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const offset = (page - 1) * limit;
+
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const { name } = req.query;
+      const students = await studentsModel.getPaginatedStudents(limit, offset);
+      const totalStudents = await studentsModel.getTotalStudentsCount();
 
-      const filteredStudents = students.filter((student) =>
-        student.name.toLowerCase().includes(name.toLowerCase()),
-      );
-
-      res.status(200).json({
-        status: "success",
-        message: "Students retrieved successfully",
-        data: filteredStudents,
-      });
-    } catch (error) {
-      res.status(500).json({
-        status: "error",
-        message: `Internal Server Error, ${error}`,
-      });
-    }
-  },
-
-  /**
-   * Retrieves paginated students from the JSON file and sends them in the response.
-   */
-  getPaginatedStudents: (req, res) => {
-    try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      let { page, limit } = req.query;
-
-      page = parseInt(page) || 1;
-      limit = parseInt(limit) || 10;
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
-      const paginatedStudents = students.slice(startIndex, endIndex);
-
-      const totalPages = Math.ceil(students.length / limit);
+      const totalPages = Math.ceil(totalStudents / limit);
 
       const baseUrl = `${req.protocol}://${req.get("host")}${req.baseUrl}${req.path}`;
       const links = [];
@@ -84,17 +43,16 @@ const studentsController = {
           `<${baseUrl}?page=${totalPages}&limit=${limit}>; rel="last"`,
         );
       }
-
       res.set("Link", links.join(", "));
 
       res.status(200).json({
         status: "success",
         message: "Students retrieved successfully",
-        data: paginatedStudents,
+        data: students,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(students.length / limit),
-          totalStudents: students.length,
+          totalPages: totalPages,
+          totalStudents: totalStudents,
         },
       });
     } catch (error) {
@@ -105,22 +63,15 @@ const studentsController = {
     }
   },
 
-  /**
-   * Retrieves students sorted by grade from the JSON file and sends them in the response.
-   */
-  getStudentsSortedByGrade: (req, res) => {
+  getStudentsSortedByGrade: async (req, res) => {
+    const { sortOrder = "asc" } = req.query;
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const { sortOrder = "asc" } = req.query;
-
-      const sortedStudents = students.sort((a, b) => {
-        return sortOrder === "asc" ? a.grade - b.grade : b.grade - a.grade;
-      });
+      const students = await studentsModel.getStudentsSortedByGrade(sortOrder);
 
       res.status(200).json({
         status: "success",
         message: "Students sorted by grade successfully",
-        data: sortedStudents,
+        data: students,
       });
     } catch (error) {
       res.status(500).json({
@@ -130,22 +81,17 @@ const studentsController = {
     }
   },
 
-  /**
-   * Retrieves students filtered by course from the JSON file and sends them in the response.
-   */
-  getFilteredStudentsByCourse: (req, res) => {
-    try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const { course } = req.query;
+  getFilteredStudentsByCourse: async (req, res) => {
+    const { courseName } = req.query;
 
-      const filteredStudents = students.filter((student) =>
-        student.courses.includes(course),
-      );
+    try {
+      const students =
+        await studentsModel.getFilteredStudentsByCourse(courseName);
 
       res.status(200).json({
         status: "success",
         message: "Students filtered by course successfully",
-        data: filteredStudents,
+        data: students,
       });
     } catch (error) {
       res.status(500).json({
@@ -155,17 +101,12 @@ const studentsController = {
     }
   },
 
-  /**
-   * Retrieves a student by ID from the JSON file and sends it in the response.
-   */
-  getStudentById: (req, res) => {
+  getStudentById: async (req, res) => {
+    const { userId, studentId } = req.params;
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const getStudent = students.find(
-        (student) => student.id === parseInt(req.params.id),
-      );
-
-      if (!getStudent) {
+      const student = await studentsModel.getStudentById(studentId);
+      console.log(`Retrieved student: ${JSON.stringify(student)}`);
+      if (!student || student.user_id !== parseInt(userId, 10)) {
         return res.status(404).json({
           status: "error",
           message: "Student not found",
@@ -175,7 +116,7 @@ const studentsController = {
       res.status(200).json({
         status: "success",
         message: "Student retrieved successfully",
-        data: getStudent,
+        data: student,
       });
     } catch (error) {
       res.status(500).json({
@@ -185,30 +126,26 @@ const studentsController = {
     }
   },
 
-  /**
-   * Adds a new student to the JSON file.
-   */
-  addStudent: async (req, res) => {
+  createStudent: async (req, res) => {
+    const { userId } = req.params;
+    const { dateOfBirth, phoneNumber, address, enrollmentDate } = req.body;
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const newStudent = {
-        id: students.length + 1,
-        name: req.body.name,
-        age: req.body.age,
-        grade: req.body.grade,
-        email: req.body.email,
-        address: req.body.address,
-        phone: req.body.phone,
-        enrollmentDate: req.body.enrollmentDate,
-        courses: req.body.courses || [],
-      };
+      const user = await usersModel.getUserById(userId);
 
-      students.push(newStudent);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
+      }
 
-      await fs.promises.writeFile(
-        studentsFilePath,
-        JSON.stringify(students, null, 2),
-      );
+      const newStudent = await studentsModel.createStudent({
+        userId,
+        dateOfBirth,
+        phoneNumber,
+        address,
+        enrollmentDate,
+      });
 
       res.status(201).json({
         status: "success",
@@ -223,72 +160,31 @@ const studentsController = {
     }
   },
 
-  /**
-   * Updates a student by ID in the JSON file.
-   */
   updateStudent: async (req, res) => {
+    const { userId, studentId } = req.params;
+    const studentData = req.body;
+
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const updateStudent = students.find(
-        (student) => student.id === parseInt(req.params.id),
+      const updatedStudent = await studentsModel.updateStudent(
+        userId,
+        studentId,
+        studentData,
       );
 
-      if (!updateStudent) {
+      if (!updatedStudent) {
         return res.status(404).json({
           status: "error",
           message: "Student not found",
         });
       }
 
-      const {
-        name,
-        age,
-        grade,
-        email,
-        address,
-        phone,
-        enrollmentDate,
-        courses,
-      } = req.body;
-
-      if (
-        !name ||
-        !age ||
-        !grade ||
-        !email ||
-        !address ||
-        !phone ||
-        !enrollmentDate ||
-        !courses
-      ) {
-        return res.status(400).json({
-          status: "error",
-          message: "All fields are required",
-        });
-      }
-
-      Object.assign(updateStudent, {
-        name,
-        age,
-        grade,
-        email,
-        address,
-        phone,
-        enrollmentDate,
-        courses,
-      });
-
-      await fs.promises.writeFile(
-        studentsFilePath,
-        JSON.stringify(students, null, 2),
-      );
-
       res.status(200).json({
         status: "success",
         message: "Student updated successfully",
-        data: updateStudent,
+        data: updatedStudent,
       });
     } catch (error) {
+      console.error("Error updating student:", error);
       res.status(500).json({
         status: "error",
         message: `Internal Server Error, ${error}`,
@@ -296,79 +192,27 @@ const studentsController = {
     }
   },
 
-  /**
-   * Partially updates a student by ID in the JSON file.
-   */
   partiallyUpdateStudent: async (req, res) => {
+    const { userId, studentId } = req.params;
+    const studentData = req.body;
     try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const updateSpecificValueStudent = students.find(
-        (student) => student.id === parseInt(req.params.id),
+      const updatedStudent = await studentsModel.partiallyUpdateStudent(
+        userId,
+        studentId,
+        studentData,
       );
 
-      if (!updateSpecificValueStudent) {
+      if (!updatedStudent) {
         return res.status(404).json({
           status: "error",
-          message: "Student not found",
+          message: "Student not found or does not belong to the specified user",
         });
       }
-
-      const updates = req.body;
-
-      for (const key in updates) {
-        if (
-          Object.prototype.hasOwnProperty.call(updates, key) &&
-          Object.prototype.hasOwnProperty.call(updateSpecificValueStudent, key)
-        ) {
-          updateSpecificValueStudent[key] = updates[key];
-        }
-      }
-
-      await fs.promises.writeFile(
-        studentsFilePath,
-        JSON.stringify(students, null, 2),
-      );
 
       res.status(200).json({
         status: "success",
         message: "Student updated successfully",
-        data: updateSpecificValueStudent,
-      });
-    } catch (error) {
-      res.status(500).json({
-        status: "error",
-        message: `Internal Server Error, ${error}`,
-      });
-    }
-  },
-
-  /**
-   * Deletes a student by ID from the JSON file.
-   */
-  deleteStudent: async (req, res) => {
-    try {
-      const students = JSON.parse(fs.readFileSync(studentsFilePath, "utf-8"));
-      const deleteStudentIndex = students.findIndex(
-        (student) => student.id === parseInt(req.params.id),
-      );
-
-      if (deleteStudentIndex === -1) {
-        return res.status(404).json({
-          status: "error",
-          message: "Student not found",
-        });
-      }
-
-      students.splice(deleteStudentIndex, 1);
-
-      await fs.promises.writeFile(
-        studentsFilePath,
-        JSON.stringify(students, null, 2),
-      );
-
-      res.status(200).json({
-        status: "success",
-        message: "Student deleted successfully",
+        data: updatedStudent,
       });
     } catch (error) {
       res.status(500).json({

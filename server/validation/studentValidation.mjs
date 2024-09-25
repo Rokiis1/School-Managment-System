@@ -1,48 +1,32 @@
 import { checkSchema } from "express-validator";
 
-// const studentValidationRules = {
-//   addStudent: [
-//     body("name").notEmpty().withMessage("Name is required"),
-//     body("age").isInt({ min: 1 }).withMessage("Age must be a positive integer"),
-//     // other validation rules...
-//   ],
-//   // other validation schemas...
-// };
-
-// export const studentRegistrationValidationSchema = checkSchema({});
-// export const loginValidationSchema = checkSchema({});
-
 export const studentValidationSchema = {
-  addStudent: checkSchema({
-    name: {
-      notEmpty: {
-        errorMessage: "Name is required",
-      },
-    },
-    age: {
+  createStudent: checkSchema({
+    userId: {
+      in: ["params"],
       isInt: {
         options: { min: 1 },
-        errorMessage: "Age must be a positive integer",
+        errorMessage: "User ID must be a positive integer",
       },
       notEmpty: {
-        errorMessage: "Age is required",
+        errorMessage: "User ID is required",
       },
     },
-    grade: {
-      isFloat: {
-        options: { min: 0 },
-        errorMessage: "Grade must be a positive number",
+    dateOfBirth: {
+      isISO8601: {
+        errorMessage: "Valid date of birth is required (YYYY-MM-DD)",
       },
       notEmpty: {
-        errorMessage: "Grade is required",
+        errorMessage: "Date of birth is required",
       },
     },
-    email: {
-      isEmail: {
-        errorMessage: "Valid email is required",
+    phoneNumber: {
+      matches: {
+        options: [/^\+370\d{8}$/],
+        errorMessage: "Phone number must start with +370 and be 11 digits long",
       },
       notEmpty: {
-        errorMessage: "Email is required",
+        errorMessage: "Phone number is required",
       },
     },
     address: {
@@ -50,64 +34,38 @@ export const studentValidationSchema = {
         errorMessage: "Address is required",
       },
     },
-    phone: {
-      notEmpty: {
-        errorMessage: "Phone number is required",
-      },
-    },
     enrollmentDate: {
       isISO8601: {
-        errorMessage: "Valid enrollment date is required",
+        errorMessage: "Valid enrollment date is required (YYYY-MM-DD)",
       },
       notEmpty: {
         errorMessage: "Enrollment date is required",
       },
     },
-    courses: {
-      isArray: {
-        errorMessage: "Courses must be an array",
-      },
-      notEmpty: {
-        errorMessage: "Courses are required",
-      },
-    },
   }),
+
   updateStudent: checkSchema({
-    id: {
+    studentId: {
       in: ["params"],
       isInt: {
         errorMessage: "Student ID must be an integer",
       },
     },
-    name: {
+    dateOfBirth: {
+      isISO8601: {
+        errorMessage: "Valid date of birth is required (YYYY-MM-DD)",
+      },
       notEmpty: {
-        errorMessage: "Name is required",
+        errorMessage: "Date of birth is required",
       },
     },
-    age: {
-      isInt: {
-        options: { min: 1 },
-        errorMessage: "Age must be a positive integer",
+    phoneNumber: {
+      matches: {
+        options: [/^\+370\d{8}$/],
+        errorMessage: "Phone number must start with +370 and be 11 digits long",
       },
       notEmpty: {
-        errorMessage: "Age is required",
-      },
-    },
-    grade: {
-      isFloat: {
-        options: { min: 0 },
-        errorMessage: "Grade must be a positive number",
-      },
-      notEmpty: {
-        errorMessage: "Grade is required",
-      },
-    },
-    email: {
-      isEmail: {
-        errorMessage: "Valid email is required",
-      },
-      notEmpty: {
-        errorMessage: "Email is required",
+        errorMessage: "Phone number is required",
       },
     },
     address: {
@@ -115,47 +73,13 @@ export const studentValidationSchema = {
         errorMessage: "Address is required",
       },
     },
-    phone: {
-      notEmpty: {
-        errorMessage: "Phone number is required",
-      },
-    },
-    enrollmentDate: {
-      isISO8601: {
-        errorMessage: "Valid enrollment date is required",
-      },
-      notEmpty: {
-        errorMessage: "Enrollment date is required",
-      },
-    },
-    courses: {
-      isArray: {
-        errorMessage: "Courses must be an array",
-      },
-      notEmpty: {
-        errorMessage: "Courses are required",
-      },
-    },
   }),
+
   partiallyUpdateStudent: checkSchema({
-    firstName: {
-      in: ["body"],
-      optional: true,
-      isString: {
-        errorMessage: "First name must be a string",
-      },
-      notEmpty: {
-        errorMessage: "First name cannot be empty",
-      },
-    },
-    lastName: {
-      in: ["body"],
-      optional: true,
-      isString: {
-        errorMessage: "Last name must be a string",
-      },
-      notEmpty: {
-        errorMessage: "Last name cannot be empty",
+    studentId: {
+      in: ["params"],
+      isInt: {
+        errorMessage: "Student ID must be an integer",
       },
     },
     dateOfBirth: {
@@ -165,18 +89,15 @@ export const studentValidationSchema = {
         errorMessage: "Date of birth must be a valid date",
       },
     },
-    email: {
-      in: ["body"],
-      optional: true,
-      isEmail: {
-        errorMessage: "Email must be a valid email address",
-      },
-    },
     phoneNumber: {
       in: ["body"],
       optional: true,
       isMobilePhone: {
         errorMessage: "Phone number must be a valid phone number",
+      },
+      isLength: {
+        options: { max: 12 },
+        errorMessage: "Phone number cannot be longer than 12 characters",
       },
     },
     address: {
@@ -188,27 +109,20 @@ export const studentValidationSchema = {
       notEmpty: {
         errorMessage: "Address cannot be empty",
       },
+      isLength: {
+        options: { max: 255 },
+        errorMessage: "Address cannot be longer than 255 characters",
+      },
     },
-  }),
-  getStudentById: checkSchema({
-    id: {
-      in: ["params"],
-      isInt: {
-        errorMessage: "Student ID must be an integer",
+    enrollmentDate: {
+      in: ["body"],
+      optional: true,
+      isDate: {
+        errorMessage: "Enrollment date must be a valid date",
       },
     },
   }),
-  searchStudents: checkSchema({
-    name: {
-      in: ["query"],
-      isString: {
-        errorMessage: "Name must be a string",
-      },
-      notEmpty: {
-        errorMessage: "Name cannot be empty",
-      },
-    },
-  }),
+
   getStudentsSortedByGrade: checkSchema({
     sortOrder: {
       in: ["query"],
@@ -219,6 +133,7 @@ export const studentValidationSchema = {
       },
     },
   }),
+
   getFilteredStudentsByCourse: checkSchema({
     course: {
       in: ["query"],
@@ -227,6 +142,7 @@ export const studentValidationSchema = {
       },
     },
   }),
+
   getPaginatedStudents: checkSchema({
     page: {
       in: ["query"],
@@ -236,6 +152,7 @@ export const studentValidationSchema = {
       },
       toInt: true,
     },
+
     limit: {
       in: ["query"],
       isInt: {

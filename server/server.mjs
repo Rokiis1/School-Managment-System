@@ -7,6 +7,8 @@ if (process.env.NODE_ENV === "prod") {
   dotenv.config({ path: ".env.dev" });
 }
 
+import passport from "./strategies/auth.mjs";
+
 import routes from "./routes/index.mjs";
 import { connectDB } from "./db/postgresConnection.mjs";
 
@@ -27,6 +29,8 @@ const startServer = async () => {
   const PORT = process.env.APP_PORT;
 
   app.use(express.json());
+
+  app.use(passport.initialize());
 
   app.get("/api/v1/health", (req, res) => {
     try {

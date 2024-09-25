@@ -1,9 +1,9 @@
 import { checkSchema } from "express-validator";
-import { userModel } from "../models/userModel.js";
+import { usersModel } from "../models/index.mjs";
 
 export const userValidationSchema = {
   userValidationSchema: checkSchema({
-    first_name: {
+    firstName: {
       isLength: {
         options: { max: 50 },
         errorMessage: "First name must be at most 50 characters",
@@ -15,7 +15,7 @@ export const userValidationSchema = {
         errorMessage: "First name must be a string",
       },
     },
-    last_name: {
+    lastName: {
       isLength: {
         options: { max: 50 },
         errorMessage: "Last name must be at most 50 characters",
@@ -40,11 +40,61 @@ export const userValidationSchema = {
       },
       custom: {
         options: async (value) => {
-          const existingUser = await userModel.getUserByEmail({ email: value });
+          const existingUser = await usersModel.getUserByEmail({
+            email: value,
+          });
           if (existingUser) {
             throw new Error("Email already exists.");
           }
         },
+      },
+    },
+    password: {
+      isLength: {
+        options: { min: 8, max: 128 },
+        errorMessage: "Password must be between 8 and 128 characters",
+      },
+      matches: {
+        options:
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&~#^_+=\-';,./|":<>?])[A-Za-z\d@$!%*?&~#^_+=\-';,./|":<>?]{8,128}$/,
+        errorMessage:
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+      },
+      notEmpty: {
+        errorMessage: "Password cannot be empty",
+      },
+    },
+    repeatPassword: {
+      notEmpty: {
+        errorMessage: "Repeat password cannot be empty",
+      },
+      custom: {
+        options: (value, { req }) => {
+          if (value !== req.body.password) {
+            throw new Error("Passwords do not match");
+          }
+          return true;
+        },
+      },
+    },
+  }),
+
+  login: checkSchema({
+    email: {
+      isEmail: {
+        errorMessage: "Email must be valid",
+      },
+      notEmpty: {
+        errorMessage: "Email cannot be empty",
+      },
+    },
+    password: {
+      isLength: {
+        options: { min: 6 },
+        errorMessage: "Password must be at least 6 characters",
+      },
+      notEmpty: {
+        errorMessage: "Password cannot be empty",
       },
     },
   }),
